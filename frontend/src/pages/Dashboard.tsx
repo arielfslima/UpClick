@@ -3,6 +3,9 @@ import { getAllTasks, getAllDevelopers, getTaskStats, syncTasks } from '../servi
 import { Task, Developer, TaskStats } from '../types';
 import TaskCard from '../components/TaskCard';
 import DeveloperCard from '../components/DeveloperCard';
+import LoadingSpinner from '../components/LoadingSpinner';
+import ErrorMessage from '../components/ErrorMessage';
+import StatsCard from '../components/StatsCard';
 import { useNavigate } from 'react-router-dom';
 
 export default function Dashboard() {
@@ -10,6 +13,7 @@ export default function Dashboard() {
   const [developers, setDevelopers] = useState<Developer[]>([]);
   const [stats, setStats] = useState<TaskStats | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [syncing, setSyncing] = useState(false);
   const navigate = useNavigate();
 
@@ -20,6 +24,7 @@ export default function Dashboard() {
   const fetchData = async () => {
     try {
       setLoading(true);
+      setError(null);
       const [tasksRes, devsRes, statsRes] = await Promise.all([
         getAllTasks(),
         getAllDevelopers(),
@@ -29,8 +34,9 @@ export default function Dashboard() {
       setTasks(tasksRes.data.slice(0, 6)); // Show only 6 recent tasks
       setDevelopers(devsRes.data.slice(0, 4)); // Show only 4 developers
       setStats(statsRes.data);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error fetching data:', error);
+      setError(error.response?.data?.error || 'Failed to load dashboard data');
     } finally {
       setLoading(false);
     }
@@ -49,11 +55,11 @@ export default function Dashboard() {
   };
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
-      </div>
-    );
+    return <LoadingSpinner message="Loading dashboard..." />;
+  }
+
+  if (error) {
+    return <ErrorMessage message={error} onRetry={fetchData} />;
   }
 
   return (
@@ -76,41 +82,26 @@ export default function Dashboard() {
       {/* Stats Cards */}
       {stats && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Total Tasks</p>
-                <p className="text-3xl font-bold text-gray-900 mt-1">{stats.totalTasks}</p>
-              </div>
-              <div className="w-12 h-12 bg-indigo-100 rounded-lg flex items-center justify-center text-2xl">
-                📋
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Open Tasks</p>
-                <p className="text-3xl font-bold text-blue-600 mt-1">{stats.openTasks}</p>
-              </div>
-              <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center text-2xl">
-                🔵
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Completed</p>
-                <p className="text-3xl font-bold text-green-600 mt-1">{stats.closedTasks}</p>
-              </div>
-              <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center text-2xl">
-                ✅
-              </div>
-            </div>
-          </div>
+          <StatsCard
+            title="Total Tasks"
+            value={stats.totalTasks}
+            icon="📋"
+            iconBgColor="bg-indigo-100"
+          />
+          <StatsCard
+            title="Open Tasks"
+            value={stats.openTasks}
+            icon="🔵"
+            iconBgColor="bg-blue-100"
+            valueColor="text-blue-600"
+          />
+          <StatsCard
+            title="Completed"
+            value={stats.closedTasks}
+            icon="✅"
+            iconBgColor="bg-green-100"
+            valueColor="text-green-600"
+          />
         </div>
       )}
 
