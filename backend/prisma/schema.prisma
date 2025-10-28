@@ -1,0 +1,140 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Models
+model Developer {
+  id            String         @id @default(uuid())
+  clickupId     Int            @unique // ClickUp user ID
+  username      String
+  email         String         @unique
+  initials      String
+  color         String?
+  profilePicture String?
+  totalPoints   Float          @default(0)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  tasks         Task[]
+  timeEntries   TimeEntry[]
+
+  @@map("developers")
+}
+
+model Task {
+  id                String        @id // ClickUp task ID
+  name              String
+  description       String?       @db.Text
+  status            String
+  statusColor       String
+  priority          String?
+  priorityColor     String?
+  url               String
+  timeEstimate      Int?          // milliseconds
+  timeSpent         Int?          // milliseconds
+  points            Float?        // custom field for points
+  dueDate           DateTime?
+  dateCreated       DateTime
+  dateUpdated       DateTime
+  dateClosed        DateTime?
+  creatorId         Int
+  creatorUsername   String
+  creatorEmail      String
+  listId            String
+  listName          String
+  spaceId           String
+
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  developers        Developer[]
+  timeEntries       TimeEntry[]
+  tags              TaskTag[]
+  customFields      CustomField[]
+
+  @@map("tasks")
+}
+
+model TimeEntry {
+  id            String    @id @default(uuid())
+  taskId        String
+  developerId   String
+  hours         Float
+  date          DateTime
+  week          Int       // Week number of the year
+  year          Int
+  description   String?
+
+  task          Task      @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  developer     Developer @relation(fields: [developerId], references: [id], onDelete: Cascade)
+
+  createdAt     DateTime  @default(now())
+
+  @@index([developerId, week, year])
+  @@index([taskId])
+  @@map("time_entries")
+}
+
+model TaskTag {
+  id        String   @id @default(uuid())
+  taskId    String
+  name      String
+  fgColor   String
+  bgColor   String
+
+  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@unique([taskId, name])
+  @@map("task_tags")
+}
+
+model CustomField {
+  id          String   @id @default(uuid())
+  taskId      String
+  fieldId     String   // ClickUp custom field ID
+  name        String
+  type        String
+  value       String?  @db.Text // JSON stringified value
+
+  task        Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@unique([taskId, fieldId])
+  @@map("custom_fields")
+}
+
+model Webhook {
+  id          String   @id @default(uuid())
+  clickupId   String   @unique // ClickUp webhook ID
+  endpoint    String
+  events      String[] // Array of event types
+  spaceId     String
+  active      Boolean  @default(true)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("webhooks")
+}
+
+model SyncLog {
+  id            String   @id @default(uuid())
+  type          String   // "full_sync" or "webhook"
+  status        String   // "success", "error"
+  tasksCount    Int?
+  errorMessage  String?  @db.Text
+  timestamp     DateTime @default(now())
+
+  @@map("sync_logs")
+}
