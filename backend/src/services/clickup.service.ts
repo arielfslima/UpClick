@@ -22,7 +22,7 @@ class ClickUpService {
         Authorization: this.apiToken,
         'Content-Type': 'application/json',
       },
-      timeout: 10000,
+      timeout: 30000,
     });
 
     // Add response interceptor for rate limiting

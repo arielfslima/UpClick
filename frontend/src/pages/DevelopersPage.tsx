@@ -1,12 +1,17 @@
 import { useState, useEffect } from 'react';
 import { getAllDevelopers } from '../services/api';
-import { Developer } from '../types';
+import type { Developer } from '../types';
 import DeveloperCard from '../components/DeveloperCard';
+import Pagination from '../components/Pagination';
+import EmptyState from '../components/EmptyState';
+import SkeletonGrid from '../components/SkeletonGrid';
 import { useNavigate } from 'react-router-dom';
 
 export default function DevelopersPage() {
   const [developers, setDevelopers] = useState<Developer[]>([]);
   const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 12;
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -25,10 +30,23 @@ export default function DevelopersPage() {
     }
   };
 
+  // Pagination calculations
+  const totalPages = Math.ceil(developers.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedDevelopers = developers.slice(startIndex, endIndex);
+
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="mb-8">
+          <div className="h-8 bg-gray-200 rounded w-48 mb-2 animate-pulse"></div>
+          <div className="h-4 bg-gray-200 rounded w-96 animate-pulse"></div>
+        </div>
+        <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-4 mb-6 animate-pulse">
+          <div className="h-4 bg-indigo-200 rounded w-full"></div>
+        </div>
+        <SkeletonGrid count={12} />
       </div>
     );
   }
@@ -51,21 +69,30 @@ export default function DevelopersPage() {
 
       {/* Developers Grid */}
       {developers.length === 0 ? (
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-12 text-center">
-          <p className="text-gray-500 text-lg">No developers found</p>
-          <p className="text-sm text-gray-400 mt-2">
-            Sync tasks from ClickUp to populate team members
-          </p>
-        </div>
+        <EmptyState
+          icon="👥"
+          title="No developers found"
+          description="Sync tasks from ClickUp to populate team members automatically."
+        />
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {developers.map((dev) => (
-            <DeveloperCard
-              key={dev.id}
-              developer={dev}
-              onClick={() => navigate(`/developers/${dev.id}`)}
-            />
-          ))}
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+          <div className="p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {paginatedDevelopers.map((dev) => (
+              <DeveloperCard
+                key={dev.id}
+                developer={dev}
+                onClick={() => navigate(`/developers/${dev.id}`)}
+              />
+            ))}
+          </div>
+
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+            itemsPerPage={itemsPerPage}
+            totalItems={developers.length}
+          />
         </div>
       )}
     </div>

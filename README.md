@@ -11,6 +11,12 @@ A full-stack web application for managing development team tasks, tracking point
 - 🔄 **Webhook Support** - Real-time updates when tasks change in ClickUp
 - 🎯 **Points Balancing** - Auto-assign tasks to developers with lowest points
 - 📥 **CSV Export** - Export weekly reports for payout processing
+- 🔍 **Advanced Filtering** - Search tasks and filter by status
+- 📄 **Pagination** - Smooth navigation through large task and developer lists
+- 🎨 **Modern UI** - Clean, responsive interface with Tailwind CSS
+- 🔔 **Toast Notifications** - Real-time feedback for all actions
+- ⏱️ **Time Entry Tracking** - Log hours worked on tasks with detailed entries
+- 📊 **Developer Analytics** - View individual developer performance and workload
 
 ## Tech Stack
 
@@ -21,10 +27,12 @@ A full-stack web application for managing development team tasks, tracking point
 - **Axios** for ClickUp API integration
 
 ### Frontend
-- **React** 18 + **TypeScript**
-- **Vite** build tool
-- **Tailwind CSS** for styling
-- **React Router** for navigation
+- **React** 19 + **TypeScript**
+- **Vite** 7 build tool
+- **Tailwind CSS** 4 for styling
+- **React Router** 7 for navigation
+- **Context API** for state management
+- **Axios** for API requests
 
 ## Project Structure
 
@@ -79,6 +87,20 @@ npm install
 
 ### 2. Configure PostgreSQL Database
 
+The project includes an automated database setup script:
+
+```bash
+cd backend
+node setup-db.js
+```
+
+This script will:
+- Detect your PostgreSQL installation
+- Automatically find the correct password
+- Create the `upclick` database if it doesn't exist
+- Update your `.env` file with the correct connection string
+
+**Manual Setup (Alternative):**
 ```bash
 # Create database
 createdb upclick
@@ -210,21 +232,61 @@ Or use the API endpoint from your frontend once deployed.
 - Quick access to recent tasks and developers
 
 ### Tasks Page
-- View all tasks from ClickUp
-- Filter by status
+- View all tasks from ClickUp with pagination (12 tasks per page)
+- Filter by status with real-time updates
 - Search tasks by name or description
 - See task details including points, hours, assignees
+- Empty state when no tasks match filters
+- Smooth navigation with Previous/Next buttons
 
 ### Developers Page
-- View all team members sorted by points (lowest first)
-- See each developer's total points and active tasks
-- Use for deciding who to assign new tasks to
+- View all team members with pagination (12 developers per page)
+- Sorted by points (lowest first) for easy task assignment
+- See each developer's total points and active tasks count
+- Click on developer card to view detailed profile
+- Points balancing tip displayed at top
+
+### Developer Detail Page
+- Complete developer profile with statistics
+- View active tasks with "Add Time Entry" buttons
+- Track time entries with detailed table view
+- See completed tasks
+- Real-time updates on time entry submission
+- Empty states for tasks and time entries
 
 ### Reports Page
-- Generate weekly hours reports
-- Navigate between weeks
+- Generate weekly hours reports by week and year
+- Navigate between weeks with Previous/Next buttons
 - Export to CSV for payout processing
 - See breakdown by developer and task
+- Total hours calculation per developer
+- Week number display (ISO 8601 format)
+
+## UI/UX Features
+
+### Toast Notifications
+- Success notifications for completed actions (sync, time entries)
+- Error notifications for failed operations
+- Auto-dismiss after 5 seconds
+- Positioned at top-right for non-intrusive feedback
+
+### Empty States
+- Friendly empty state components throughout the app
+- Contextual icons and helpful messages
+- Suggestions for next actions when no data is present
+
+### Pagination
+- 12 items per page for optimal viewing
+- Shows "Showing X to Y of Z results"
+- Previous/Next navigation buttons
+- Page number buttons with ellipsis for many pages
+- Mobile-responsive design
+
+### Responsive Design
+- Mobile-first approach
+- Adapts seamlessly from mobile to desktop
+- Hamburger menu on mobile devices
+- Grid layouts adjust based on screen size
 
 ## Database Schema
 
@@ -276,19 +338,33 @@ npm run preview      # Preview production build
 ## Troubleshooting
 
 ### Database Connection Issues
-- Ensure PostgreSQL is running
+- Ensure PostgreSQL is running: `brew services start postgresql` (macOS) or `sudo service postgresql start` (Linux)
 - Check `DATABASE_URL` in `.env`
+- Run automated setup: `node backend/setup-db.js`
 - Run `npx prisma db push` to sync schema
 
 ### ClickUp API Issues
-- Verify API token is correct
+- Verify API token is correct in `.env`
 - Check workspace and space IDs match your ClickUp account
 - Ensure you have proper permissions in ClickUp
+- Test API manually: `curl -H "Authorization: YOUR_TOKEN" https://api.clickup.com/api/v2/team`
 
 ### Sync Not Working
-- Check backend logs for errors
+- Check backend logs for errors in terminal
 - Verify ClickUp credentials in `.env`
 - Try manual sync from dashboard
+- Check if ClickUp API rate limit is reached (100 requests/minute)
+
+### PostCSS/Tailwind CSS Errors
+- Ensure `@tailwindcss/postcss` is installed: `npm install -D @tailwindcss/postcss`
+- Restart the development server
+- Clear node_modules and reinstall: `rm -rf node_modules && npm install`
+
+### Frontend Not Loading
+- Check if backend is running on correct port (3001)
+- Verify `VITE_API_URL` in frontend `.env`
+- Check browser console for errors
+- Clear browser cache and restart dev server
 
 ## Contributing
 

@@ -1,4 +1,4 @@
-import { Developer } from '../types';
+import type { Developer } from '../types';
 
 interface DeveloperCardProps {
   developer: Developer;

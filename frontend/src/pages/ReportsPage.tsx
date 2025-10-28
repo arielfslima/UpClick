@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { getWeeklyReport } from '../services/api';
-import { WeeklyReport } from '../types';
+import type { WeeklyReport } from '../types';
 import { getWeekNumber } from '../utils/helpers';
 
 export default function ReportsPage() {

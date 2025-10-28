@@ -1,4 +1,4 @@
-import { Task } from '../types';
+import type { Task } from '../types';
 import { msToHours, formatDate, getStatusBadgeColor, getPriorityBadgeColor } from '../utils/helpers';
 
 interface TaskCardProps {

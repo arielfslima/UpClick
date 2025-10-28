@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { getAllTasks, getAllDevelopers, getTaskStats, syncTasks } from '../services/api';
-import { Task, Developer, TaskStats } from '../types';
+import type { Task, Developer, TaskStats } from '../types';
 import TaskCard from '../components/TaskCard';
 import DeveloperCard from '../components/DeveloperCard';
 import LoadingSpinner from '../components/LoadingSpinner';

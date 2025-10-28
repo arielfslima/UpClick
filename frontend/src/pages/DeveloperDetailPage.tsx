@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getDeveloperById } from '../services/api';
-import { Developer } from '../types';
+import type { Developer } from '../types';
 import LoadingSpinner from '../components/LoadingSpinner';
 import ErrorMessage from '../components/ErrorMessage';
 import TimeEntryForm from '../components/TimeEntryForm';
 import TaskCard from '../components/TaskCard';
-import { msToHours, formatDate } from '../utils/helpers';
+import EmptyState from '../components/EmptyState';
+import { formatDate } from '../utils/helpers';
 
 export default function DeveloperDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -123,9 +124,9 @@ export default function DeveloperDetailPage() {
       )}
 
       {/* Active Tasks */}
-      {activeTasks.length > 0 && (
-        <div className="mb-8">
-          <h2 className="text-2xl font-semibold text-gray-900 mb-4">Active Tasks</h2>
+      <div className="mb-8">
+        <h2 className="text-2xl font-semibold text-gray-900 mb-4">Active Tasks</h2>
+        {activeTasks.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {activeTasks.map((task) => (
               <div key={task.id} className="relative">
@@ -139,13 +140,19 @@ export default function DeveloperDetailPage() {
               </div>
             ))}
           </div>
-        </div>
-      )}
+        ) : (
+          <EmptyState
+            icon="📝"
+            title="No active tasks"
+            description="This developer doesn't have any active tasks at the moment."
+          />
+        )}
+      </div>
 
       {/* Time Entries */}
-      {developer.timeEntries && developer.timeEntries.length > 0 && (
-        <div className="mb-8">
-          <h2 className="text-2xl font-semibold text-gray-900 mb-4">Time Entries</h2>
+      <div className="mb-8">
+        <h2 className="text-2xl font-semibold text-gray-900 mb-4">Time Entries</h2>
+        {developer.timeEntries && developer.timeEntries.length > 0 ? (
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
@@ -184,8 +191,14 @@ export default function DeveloperDetailPage() {
               </tbody>
             </table>
           </div>
-        </div>
-      )}
+        ) : (
+          <EmptyState
+            icon="⏱️"
+            title="No time entries"
+            description="No time has been logged yet. Add time entries to track work on tasks."
+          />
+        )}
+      </div>
 
       {/* Completed Tasks */}
       {completedTasks.length > 0 && (

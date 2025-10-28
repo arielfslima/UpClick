@@ -10,6 +10,7 @@ export interface Developer {
   createdAt: string;
   updatedAt: string;
   tasks?: Task[];
+  timeEntries?: TimeEntry[];
   _count?: {
     tasks: number;
     timeEntries: number;

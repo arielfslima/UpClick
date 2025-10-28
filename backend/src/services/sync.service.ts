@@ -86,6 +86,11 @@ class SyncService {
       // Extract points from custom fields
       let points: number | null = null;
       if (clickupTask.custom_fields) {
+        // Debug: log all custom field names
+        console.log(`🔍 Task "${clickupTask.name}" custom fields:`,
+          clickupTask.custom_fields.map(f => ({ name: f.name, value: f.value, type: f.type }))
+        );
+
         const pointsField = clickupTask.custom_fields.find(
           (field) => field.name.toLowerCase() === 'points' || field.name.toLowerCase() === 'story points'
         );
@@ -93,6 +98,9 @@ class SyncService {
           points = typeof pointsField.value === 'number'
             ? pointsField.value
             : parseFloat(pointsField.value);
+          console.log(`✅ Found points field for task "${clickupTask.name}": ${points}`);
+        } else {
+          console.log(`⚠️ No points field found for task "${clickupTask.name}"`);
         }
       }
 

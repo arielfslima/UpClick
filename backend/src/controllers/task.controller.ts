@@ -110,16 +110,27 @@ export const syncTasks = async (req: Request, res: Response): Promise<void> => {
         tasksCount: result.tasksCount,
       });
     } else {
-      res.status(500).json({
+      // Check if it's an authentication error
+      const isAuthError = result.error?.includes('401') || result.error?.includes('OAUTH');
+
+      res.status(isAuthError ? 401 : 500).json({
         success: false,
-        error: result.error,
+        error: isAuthError
+          ? 'Invalid or expired ClickUp API token. Please update your CLICKUP_API_TOKEN in the .env file.'
+          : result.error,
       });
     }
   } catch (error: any) {
     console.error('Error syncing tasks:', error.message);
-    res.status(500).json({
+
+    // Check if it's an authentication error
+    const isAuthError = error.message?.includes('401') || error.message?.includes('OAUTH');
+
+    res.status(isAuthError ? 401 : 500).json({
       success: false,
-      error: error.message,
+      error: isAuthError
+        ? 'Invalid or expired ClickUp API token. Please update your CLICKUP_API_TOKEN in the .env file.'
+        : error.message,
     });
   }
 };
