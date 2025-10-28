@@ -6,6 +6,7 @@ import DeveloperCard from '../components/DeveloperCard';
 import LoadingSpinner from '../components/LoadingSpinner';
 import ErrorMessage from '../components/ErrorMessage';
 import StatsCard from '../components/StatsCard';
+import { useToast } from '../components/ToastContainer';
 import { useNavigate } from 'react-router-dom';
 
 export default function Dashboard() {
@@ -15,6 +16,7 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [syncing, setSyncing] = useState(false);
+  const { showToast } = useToast();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -45,10 +47,12 @@ export default function Dashboard() {
   const handleSync = async () => {
     try {
       setSyncing(true);
-      await syncTasks();
+      const result = await syncTasks();
       await fetchData();
-    } catch (error) {
+      showToast(`Successfully synced ${result.tasksCount} tasks from ClickUp!`, 'success');
+    } catch (error: any) {
       console.error('Error syncing:', error);
+      showToast(error.response?.data?.error || 'Failed to sync tasks', 'error');
     } finally {
       setSyncing(false);
     }
