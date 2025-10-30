@@ -1,6 +1,7 @@
 import clickupService from './clickup.service';
 import databaseService from './database.service';
 import { ClickUpTask } from '../types/clickup.types';
+import logger from '../utils/logger';
 
 class SyncService {
   private prisma = databaseService.getClient();
@@ -10,21 +11,26 @@ class SyncService {
    */
   async syncAllTasks(): Promise<{ success: boolean; tasksCount: number; error?: string }> {
     try {
-      console.log('🔄 Starting full sync from ClickUp...');
+      logger.info('🔄 Starting full sync from ClickUp...');
 
-      // Fetch all tasks from ClickUp
-      const clickupTasks = await clickupService.getAllTasks();
-
-      console.log(`📦 Processing ${clickupTasks.length} tasks...`);
+      // Fetch all lists first so we can get list names
+      const lists = await clickupService.getLists();
+      logger.info(`📦 Found ${lists.length} lists`);
 
       let syncedCount = 0;
 
-      for (const clickupTask of clickupTasks) {
-        await this.syncTask(clickupTask);
-        syncedCount++;
+      // Process each list and its tasks
+      for (const list of lists) {
+        logger.info(`📥 Processing tasks from list: ${list.name}`);
+        const tasks = await clickupService.getTasksFromList(list.id);
 
-        if (syncedCount % 10 === 0) {
-          console.log(`✅ Synced ${syncedCount}/${clickupTasks.length} tasks`);
+        for (const clickupTask of tasks) {
+          await this.syncTask(clickupTask, list.id, list.name);
+          syncedCount++;
+
+          if (syncedCount % 10 === 0) {
+            logger.info(`✅ Synced ${syncedCount} tasks`);
+          }
         }
       }
 
@@ -37,11 +43,11 @@ class SyncService {
         },
       });
 
-      console.log(`✅ Sync completed! ${syncedCount} tasks synced.`);
+      logger.info(`✅ Sync completed! ${syncedCount} tasks synced.`);
 
       return { success: true, tasksCount: syncedCount };
     } catch (error: any) {
-      console.error('❌ Sync failed:', error.message);
+      logger.error('❌ Sync failed:', error.message);
 
       // Log the error
       await this.prisma.syncLog.create({
@@ -59,7 +65,7 @@ class SyncService {
   /**
    * Sync a single task
    */
-  async syncTask(clickupTask: ClickUpTask): Promise<void> {
+  async syncTask(clickupTask: ClickUpTask, listId?: string, listName?: string): Promise<void> {
     try {
       // Sync developers (assignees)
       for (const assignee of clickupTask.assignees) {
@@ -86,11 +92,6 @@ class SyncService {
       // Extract points from custom fields
       let points: number | null = null;
       if (clickupTask.custom_fields) {
-        // Debug: log all custom field names
-        console.log(`🔍 Task "${clickupTask.name}" custom fields:`,
-          clickupTask.custom_fields.map(f => ({ name: f.name, value: f.value, type: f.type }))
-        );
-
         const pointsField = clickupTask.custom_fields.find(
           (field) => field.name.toLowerCase() === 'points' || field.name.toLowerCase() === 'story points'
         );
@@ -98,15 +99,15 @@ class SyncService {
           points = typeof pointsField.value === 'number'
             ? pointsField.value
             : parseFloat(pointsField.value);
-          console.log(`✅ Found points field for task "${clickupTask.name}": ${points}`);
+          logger.debug(`✅ Found points field for task "${clickupTask.name}": ${points}`);
         } else {
-          console.log(`⚠️ No points field found for task "${clickupTask.name}"`);
+          logger.debug(`⚠️ No points field found for task "${clickupTask.name}"`);
         }
       }
 
-      // Get list name (we'll need to fetch this from ClickUp API or store it)
-      // For now, we'll use a placeholder
-      const listName = 'Board'; // TODO: Fetch actual list name
+      // Use provided list info or default values
+      const taskListId = listId || 'unknown';
+      const taskListName = listName || 'Unknown List';
 
       // Upsert the task
       const task = await this.prisma.task.upsert({
@@ -145,9 +146,9 @@ class SyncService {
           creatorId: clickupTask.creator.id,
           creatorUsername: clickupTask.creator.username,
           creatorEmail: clickupTask.creator.email,
-          listId: 'unknown', // TODO: Get from list context
-          listName,
-          spaceId: process.env.CLICKUP_SPACE_ID || '',
+          listId: taskListId,
+          listName: taskListName,
+          spaceId: clickupTask.space.id,
         },
       });
 
@@ -204,7 +205,7 @@ class SyncService {
         });
       }
     } catch (error: any) {
-      console.error(`Error syncing task ${clickupTask.id}:`, error.message);
+      logger.error(`Error syncing task ${clickupTask.id}:`, error.message);
       throw error;
     }
   }
@@ -241,9 +242,9 @@ class SyncService {
         data: { totalPoints },
       });
 
-      console.log(`✅ Updated points for ${developer.username}: ${totalPoints}`);
+      logger.info(`✅ Updated points for ${developer.username}: ${totalPoints}`);
     } catch (error: any) {
-      console.error(`Error updating developer points:`, error.message);
+      logger.error(`Error updating developer points:`, error.message);
       throw error;
     }
   }

@@ -26,6 +26,9 @@ export interface ClickUpTask {
   } | null;
   due_date: string | null;
   url: string;
+  space: {
+    id: string;
+  };
 }
 
 export interface ClickUpAssignee {

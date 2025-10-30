@@ -1,5 +1,6 @@
 import axios, { AxiosInstance } from 'axios';
 import { ClickUpTask, ClickUpList, ClickUpSpace } from '../types/clickup.types';
+import logger from '../utils/logger';
 
 class ClickUpService {
   private client: AxiosInstance;
@@ -30,7 +31,7 @@ class ClickUpService {
       (response) => response,
       (error) => {
         if (error.response?.status === 429) {
-          console.error('⚠️ ClickUp API rate limit exceeded');
+          logger.warn('⚠️ ClickUp API rate limit exceeded');
         }
         return Promise.reject(error);
       }
@@ -45,7 +46,7 @@ class ClickUpService {
       const response = await this.client.get(`/space/${this.spaceId}`);
       return response.data;
     } catch (error: any) {
-      console.error('Error fetching space:', error.response?.data || error.message);
+      logger.error('Error fetching space:', error.response?.data || error.message);
       throw error;
     }
   }
@@ -62,7 +63,7 @@ class ClickUpService {
       });
       return response.data.lists || [];
     } catch (error: any) {
-      console.error('Error fetching lists:', error.response?.data || error.message);
+      logger.error('Error fetching lists:', error.response?.data || error.message);
       throw error;
     }
   }
@@ -85,7 +86,7 @@ class ClickUpService {
       });
       return response.data.tasks || [];
     } catch (error: any) {
-      console.error(`Error fetching tasks from list ${listId}:`, error.response?.data || error.message);
+      logger.error(`Error fetching tasks from list ${listId}:`, error.response?.data || error.message);
       throw error;
     }
   }
@@ -95,26 +96,26 @@ class ClickUpService {
    */
   async getAllTasks(): Promise<ClickUpTask[]> {
     try {
-      console.log('📥 Fetching all lists...');
+      logger.info('📥 Fetching all lists...');
       const lists = await this.getLists();
-      console.log(`✅ Found ${lists.length} lists`);
+      logger.info(`✅ Found ${lists.length} lists`);
 
       const allTasks: ClickUpTask[] = [];
 
       for (const list of lists) {
-        console.log(`📥 Fetching tasks from list: ${list.name}`);
+        logger.info(`📥 Fetching tasks from list: ${list.name}`);
         const tasks = await this.getTasksFromList(list.id);
         allTasks.push(...tasks);
-        console.log(`✅ Found ${tasks.length} tasks in ${list.name}`);
+        logger.info(`✅ Found ${tasks.length} tasks in ${list.name}`);
 
         // Add small delay to avoid rate limiting
         await this.delay(100);
       }
 
-      console.log(`✅ Total tasks fetched: ${allTasks.length}`);
+      logger.info(`✅ Total tasks fetched: ${allTasks.length}`);
       return allTasks;
     } catch (error: any) {
-      console.error('Error fetching all tasks:', error.response?.data || error.message);
+      logger.error('Error fetching all tasks:', error.response?.data || error.message);
       throw error;
     }
   }
@@ -132,7 +133,7 @@ class ClickUpService {
       });
       return response.data;
     } catch (error: any) {
-      console.error(`Error fetching task ${taskId}:`, error.response?.data || error.message);
+      logger.error(`Error fetching task ${taskId}:`, error.response?.data || error.message);
       throw error;
     }
   }
@@ -147,10 +148,10 @@ class ClickUpService {
         events,
         space_id: this.spaceId,
       });
-      console.log('✅ Webhook created successfully');
+      logger.info('✅ Webhook created successfully');
       return response.data;
     } catch (error: any) {
-      console.error('Error creating webhook:', error.response?.data || error.message);
+      logger.error('Error creating webhook:', error.response?.data || error.message);
       throw error;
     }
   }
@@ -163,7 +164,7 @@ class ClickUpService {
       const response = await this.client.get(`/team/${this.workspaceId}/webhook`);
       return response.data.webhooks || [];
     } catch (error: any) {
-      console.error('Error fetching webhooks:', error.response?.data || error.message);
+      logger.error('Error fetching webhooks:', error.response?.data || error.message);
       throw error;
     }
   }
@@ -174,9 +175,9 @@ class ClickUpService {
   async deleteWebhook(webhookId: string): Promise<void> {
     try {
       await this.client.delete(`/webhook/${webhookId}`);
-      console.log(`✅ Webhook ${webhookId} deleted successfully`);
+      logger.info(`✅ Webhook ${webhookId} deleted successfully`);
     } catch (error: any) {
-      console.error(`Error deleting webhook ${webhookId}:`, error.response?.data || error.message);
+      logger.error(`Error deleting webhook ${webhookId}:`, error.response?.data || error.message);
       throw error;
     }
   }
@@ -189,9 +190,9 @@ class ClickUpService {
       await this.client.put(`/task/${taskId}`, {
         time_estimate: timeEstimateMs,
       });
-      console.log(`✅ Updated time estimate for task ${taskId}`);
+      logger.info(`✅ Updated time estimate for task ${taskId}`);
     } catch (error: any) {
-      console.error(`Error updating task time estimate:`, error.response?.data || error.message);
+      logger.error(`Error updating task time estimate:`, error.response?.data || error.message);
       throw error;
     }
   }
@@ -210,9 +211,9 @@ class ClickUpService {
       } else {
         await this.client.delete(endpoint);
       }
-      console.log(`✅ ${operation === 'add' ? 'Assigned' : 'Unassigned'} user ${userId} to task ${taskId}`);
+      logger.info(`✅ ${operation === 'add' ? 'Assigned' : 'Unassigned'} user ${userId} to task ${taskId}`);
     } catch (error: any) {
-      console.error(`Error assigning task:`, error.response?.data || error.message);
+      logger.error(`Error assigning task:`, error.response?.data || error.message);
       throw error;
     }
   }
